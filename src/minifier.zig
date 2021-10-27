@@ -83,7 +83,12 @@ fn rename(name: []const u8) ![]const u8 {
     // If an arbitrary length integer type, pass through
     if ((name[0] == 'i' or name[0] == 'u') and isDigits(name[1..])) return name;
 
-    // Pick a short name for it
+    // If we're run out of short names, just pass it through as-is
+    if (short_name_i >= short_names.len) {
+        return name;
+    }
+
+    // Take the next available short name
     const new_name = short_names[short_name_i];
     short_name_i += 1;
     try renames.put(name, new_name);

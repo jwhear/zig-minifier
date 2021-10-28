@@ -132,6 +132,15 @@ fn needsSpace(a: Tag, b: Tag) bool {
     // identifier@Builtin is OK
     if (b == Tag.builtin) return false;
 
+    // `.* *` must have a space between
+    if (a == Tag.period_asterisk and
+        (b == Tag.asterisk or
+         b == Tag.asterisk_asterisk or
+         b == Tag.asterisk_equal or
+         b == Tag.asterisk_percent or
+         b == Tag.asterisk_percent_equal)) return true;
+
+
     return mightNeedSpace(a) and mightNeedSpace(b);
 }
 

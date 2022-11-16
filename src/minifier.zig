@@ -10,7 +10,7 @@ const max_source_size = 1024 * 1024; // 1MB ought to be enough for anyone
 pub fn main() !void {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
-    const allocator = &arena.allocator;
+    const allocator = arena.allocator();
 
     // Populate renames with primitive types to prevent remapping
     // Note that arbitrary length integers will be handled by the rename function
@@ -117,7 +117,7 @@ const short_names = [_][]const u8{
 
 // Where possible use the decimal representation instead of the character literal
 // e.g. `'a'` => `97` saves one byte
-fn charEncode(allocator: *std.mem.Allocator, char: []const u8) ![]const u8 {
+fn charEncode(allocator: std.mem.Allocator, char: []const u8) ![]const u8 {
     if (std.mem.eql(u8, char, "'\n'")) return "10";
     if (char.len == 3) {
         const actual_char = char[1];
@@ -129,8 +129,6 @@ fn charEncode(allocator: *std.mem.Allocator, char: []const u8) ![]const u8 {
 
 // True if `a` and `b` will need a space between them
 fn needsSpace(a: Tag, b: Tag) bool {
-    // identifier@Builtin is OK
-    if (b == Tag.builtin) return false;
 
     // `.* *` must have a space between
     if (a == Tag.period_asterisk and
@@ -140,6 +138,12 @@ fn needsSpace(a: Tag, b: Tag) bool {
          b == Tag.asterisk_percent or
          b == Tag.asterisk_percent_equal)) return true;
 
+    // New in 0.10: `and` and `or` require whitespace on both sides
+    if (a == Tag.keyword_and or b == Tag.keyword_and) return true;
+    if (a == Tag.keyword_or or b == Tag.keyword_or) return true;
+
+    // identifier@Builtin is OK
+    if (b == Tag.builtin) return false;
 
     return mightNeedSpace(a) and mightNeedSpace(b);
 }
@@ -148,9 +152,8 @@ fn mightNeedSpace(t: Tag) bool {
     return switch (t) {
         .identifier,
         .builtin,
-        .integer_literal,
-        .float_literal,
-        //.keyword_addrspace,
+        .number_literal,
+        .keyword_addrspace,
         .keyword_align,
         .keyword_allowzero,
         .keyword_and,
@@ -200,6 +203,9 @@ fn mightNeedSpace(t: Tag) bool {
         .keyword_volatile,
         .keyword_while => true,
         else => false
+
+
+
     };
 }
 
@@ -216,6 +222,7 @@ const primitive_types = .{
     .{"void","void"},
     .{"noreturn","noreturn"},
     .{"type","type"},
+    .{"null","null"},
     .{"anyerror","anyerror"},
     .{"comptime_int","comptime_int"},
     .{"comptime_float","comptime_float"},

@@ -203,9 +203,6 @@ fn mightNeedSpace(t: Tag) bool {
         .keyword_volatile,
         .keyword_while => true,
         else => false
-
-
-
     };
 }
 
@@ -226,4 +223,7 @@ const primitive_types = .{
     .{"anyerror","anyerror"},
     .{"comptime_int","comptime_int"},
     .{"comptime_float","comptime_float"},
+    .{"true","true"},
+    .{"false","false"},
+    .{"null","null"},
 };

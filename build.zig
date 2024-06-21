@@ -1,18 +1,13 @@
 const std = @import("std");
 
-pub fn build(b: *std.build.Builder) void {
+pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    const exe = b.addExecutable(.{
-        .name = "zig-minifier",
-        .root_source_file = .{ .path = "src/minifier.zig" },
-        .target = target,
-        .optimize = optimize
-    });
-    exe.install();
+    const exe = b.addExecutable(.{ .name = "zig-minifier", .root_source_file = b.path("src/minifier.zig"), .target = target, .optimize = optimize });
+    b.installArtifact(exe);
 
-    const run_cmd = exe.run();
+    const run_cmd = b.addRunArtifact(exe);
     run_cmd.step.dependOn(b.getInstallStep());
     if (b.args) |args| {
         run_cmd.addArgs(args);

@@ -25,7 +25,7 @@ pub fn main() !void {
     try renames.put("main", "main");
 
     // Read the source in
-    var source_buffer = std.ArrayListAligned(u8,null).init(allocator);
+    var source_buffer = std.ArrayListAligned(u8, null).init(allocator);
     defer source_buffer.deinit();
     try std.io.getStdIn().reader().readAllArrayList(&source_buffer, max_source_size);
 
@@ -51,25 +51,22 @@ pub fn main() !void {
             try output.writeByte(' ');
 
         const content = source[tok.loc.start..tok.loc.end];
-        try output.writeAll(
-            switch (tok.tag) {
-                // Replace identifiers with short versions
-                // Avoid renaming an identifier immediately following a
-                //  period (e.g. std.mem)
-                //                  ^
-                .identifier => if (prev_tag == Tag.period) content
-                               else try rename(content),
+        try output.writeAll(switch (tok.tag) {
+            // Replace identifiers with short versions
+            // Avoid renaming an identifier immediately following a
+            //  period (e.g. std.mem)
+            //                  ^
+            .identifier => if (prev_tag == Tag.period) content else try rename(content),
 
-                // We filter comments out entirely
-                .doc_comment, .container_doc_comment => "",
+            // We filter comments out entirely
+            .doc_comment, .container_doc_comment => "",
 
-                // Character literal to decimal
-                .char_literal => try charEncode(allocator, content),
+            // Character literal to decimal
+            .char_literal => try charEncode(allocator, content),
 
-                // Everything is output as-is
-                else => content
-            }
-        );
+            // Everything is output as-is
+            else => content,
+        });
 
         prev_tag = tok.tag;
     }
@@ -126,21 +123,24 @@ fn charEncode(allocator: std.mem.Allocator, char: []const u8) ![]const u8 {
 
     return char;
 }
-
 // True if `a` and `b` will need a space between them
 fn needsSpace(a: Tag, b: Tag) bool {
 
     // `.* *` must have a space between
     if (a == Tag.period_asterisk and
         (b == Tag.asterisk or
-         b == Tag.asterisk_asterisk or
-         b == Tag.asterisk_equal or
-         b == Tag.asterisk_percent or
-         b == Tag.asterisk_percent_equal)) return true;
+        b == Tag.asterisk_asterisk or
+        b == Tag.asterisk_equal or
+        b == Tag.asterisk_percent or
+        b == Tag.asterisk_percent_equal)) return true;
 
     // New in 0.10: `and` and `or` require whitespace on both sides
     if (a == Tag.keyword_and or b == Tag.keyword_and) return true;
     if (a == Tag.keyword_or or b == Tag.keyword_or) return true;
+
+    // Assures successful compilation and will turn out advantageous whatsoever.
+    // Generally, the occasions where one might actually circumvent it, are rare.
+    if (a == Tag.keyword_orelse or b == Tag.keyword_orelse) return true;
 
     // identifier@Builtin is OK
     if (b == Tag.builtin) return false;
@@ -150,80 +150,29 @@ fn needsSpace(a: Tag, b: Tag) bool {
 
 fn mightNeedSpace(t: Tag) bool {
     return switch (t) {
-        .identifier,
-        .builtin,
-        .number_literal,
-        .keyword_addrspace,
-        .keyword_align,
-        .keyword_allowzero,
-        .keyword_and,
-        .keyword_anyframe,
-        .keyword_anytype,
-        .keyword_asm,
-        .keyword_async,
-        .keyword_await,
-        .keyword_break,
-        .keyword_callconv,
-        .keyword_catch,
-        .keyword_comptime,
-        .keyword_const,
-        .keyword_continue,
-        .keyword_defer,
-        .keyword_else,
-        .keyword_enum,
-        .keyword_errdefer,
-        .keyword_error,
-        .keyword_export,
-        .keyword_extern,
-        .keyword_fn,
-        .keyword_for,
-        .keyword_if,
-        .keyword_inline,
-        .keyword_noalias,
-        .keyword_noinline,
-        .keyword_nosuspend,
-        .keyword_opaque,
-        .keyword_or,
-        .keyword_orelse,
-        .keyword_packed,
-        .keyword_pub,
-        .keyword_resume,
-        .keyword_return,
-        .keyword_linksection,
-        .keyword_struct,
-        .keyword_suspend,
-        .keyword_switch,
-        .keyword_test,
-        .keyword_threadlocal,
-        .keyword_try,
-        .keyword_union,
-        .keyword_unreachable,
-        .keyword_usingnamespace,
-        .keyword_var,
-        .keyword_volatile,
-        .keyword_while => true,
-        else => false
+        .identifier, .builtin, .number_literal, .keyword_addrspace, .keyword_align, .keyword_allowzero, .keyword_and, .keyword_anyframe, .keyword_anytype, .keyword_asm, .keyword_async, .keyword_await, .keyword_break, .keyword_callconv, .keyword_catch, .keyword_comptime, .keyword_const, .keyword_continue, .keyword_defer, .keyword_else, .keyword_enum, .keyword_errdefer, .keyword_error, .keyword_export, .keyword_extern, .keyword_fn, .keyword_for, .keyword_if, .keyword_inline, .keyword_noalias, .keyword_noinline, .keyword_nosuspend, .keyword_opaque, .keyword_or, .keyword_orelse, .keyword_packed, .keyword_pub, .keyword_resume, .keyword_return, .keyword_linksection, .keyword_struct, .keyword_suspend, .keyword_switch, .keyword_test, .keyword_threadlocal, .keyword_try, .keyword_union, .keyword_unreachable, .keyword_usingnamespace, .keyword_var, .keyword_volatile, .keyword_while => true,
+        else => false,
     };
 }
 
 const primitive_types = .{
     // On code.golf the arch is 64bit so these two renames are good
-    .{"isize","i64"},
-    .{"usize","u64"},
+    .{ "isize", "i64" },
+    .{ "usize", "u64" },
 
-    .{"f16","f16"},
-    .{"f32","f32"},
-    .{"f64","f64"},
-    .{"f128","f128"},
-    .{"bool","bool"},
-    .{"void","void"},
-    .{"noreturn","noreturn"},
-    .{"type","type"},
-    .{"null","null"},
-    .{"anyerror","anyerror"},
-    .{"comptime_int","comptime_int"},
-    .{"comptime_float","comptime_float"},
-    .{"true","true"},
-    .{"false","false"},
-    .{"null","null"},
+    .{ "f16", "f16" },
+    .{ "f32", "f32" },
+    .{ "f64", "f64" },
+    .{ "f128", "f128" },
+    .{ "bool", "bool" },
+    .{ "void", "void" },
+    .{ "noreturn", "noreturn" },
+    .{ "type", "type" },
+    .{ "null", "null" },
+    .{ "anyerror", "anyerror" },
+    .{ "comptime_int", "comptime_int" },
+    .{ "comptime_float", "comptime_float" },
+    .{ "true", "true" },
+    .{ "false", "false" },
+    .{ "null", "null" },
 };
